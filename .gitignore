@@ -1,0 +1,7 @@
+__pycache__/
+.venv/
+.vcscode/
+nasdaq100_elt.egg-info/
+*.html
+*.duckdb
+*.drawio

@@ -1,0 +1,282 @@
+--- 
+title: "Nasdaq-100"
+format: 
+  dashboard: 
+    embed-resources: true
+--- 
+
+```{python}
+import pandas as pd
+import plotly.io as pio
+import plotly.express as px
+import matplotlib.pyplot as plt
+import numpy as np
+import duckdb
+from datetime import datetime
+from itables import show
+
+green_color = '#46934E'
+red_color = '#F26553'
+```
+
+
+```{python}
+with duckdb.connect(database="../data/database.duckdb", read_only=True) as con:
+  weekly_ohlc = con.execute("SELECT * FROM weekly_performance where session_year = year(current_date)").df()
+  monthly_performance = con.execute("SELECT * FROM monthly_performance").df()
+  yearly_performance = con.execute("SELECT * FROM yearly_performance").df()
+
+  nasdaq100_holdings = con.execute("""
+    SELECT
+      company_name as Company,
+      ticker as Ticker,
+      industry as Industry,
+      sector as Sector,
+      ytd_change as 'YTD Change',
+      last_price as 'Last Price',
+      market_cap as 'Market Cap'
+    FROM nasdaq100_holdings
+  """).df()
+
+  monthly_bullish_stats = con.execute("SELECT * FROM monthly_bullish_stats").df()
+
+
+plot_config = {'displayModeBar': False}
+pio.templates.default = 'plotly_white'
+```
+
+
+```{python}
+#| label: create ytd performance graph
+#| output: false
+
+
+weekly_ohlc['session_date'] = weekly_ohlc['session_week_of_year'].apply(
+    lambda x: datetime.fromisocalendar(2024, x, 1).strftime('%Y-%m-%d')
+)
+
+ytd_nq_performance = (
+  px.line(
+    weekly_ohlc,
+    x='session_date',
+    y='close'
+  )
+  .update_layout(
+    xaxis_title='Date',
+    yaxis_title='Closing Price',
+    yaxis_tickformat='$',
+    hovermode=False
+  )
+  .update_traces(line_color='black')
+)
+```
+
+```{python}
+#| label: create Nasdaq100 holdings table
+#| output: false
+
+def format_ytd_change(x):
+  x = round(x, 2)
+  color = green_color if x >= 0 else red_color
+  return f'<span style="color: {color}; font-weight: bold;">{x}%</span>'
+
+nasdaq100_holdings_table = nasdaq100_holdings.copy()
+nasdaq100_holdings_table['YTD Change'] = nasdaq100_holdings_table['YTD Change'].apply(format_ytd_change)
+nasdaq100_holdings_table['Last Price'] = nasdaq100_holdings_table['Last Price'].apply(lambda x: f"${x:,.2f}")
+nasdaq100_holdings_table['Market Cap'] = nasdaq100_holdings_table['Market Cap'].apply(lambda x: f"{x / 1e12:.2f}T")
+```
+
+```{python}
+#| label: create nasdaq100 holdings plot
+#| output: false
+
+nasdaq100_holdings = nasdaq100_holdings.assign(
+    hover_text=lambda x: (
+        "Company: " + x['Company'] +
+        "<br>Ticker: " + x['Ticker'] +
+        "<br>YTD Change: " + x['YTD Change'].astype(str) + "%"
+        "<br>Last Price: $" + x['Last Price'].round(2).astype(str)
+    ),
+    color=lambda x: np.where(x['YTD Change'] >= 0, green_color, red_color),
+    tickers_to_show=lambda x: np.where(abs(x['YTD Change']) >= 40, x['Ticker'], '')
+)
+
+nasdaq_100_holdings_performance_plot = (
+  px.scatter(
+    nasdaq100_holdings,
+    x="Ticker",
+    y="YTD Change",
+	  size="Market Cap",
+    hover_name = "hover_text",
+    text = 'tickers_to_show',
+    size_max=30
+  )
+  .update_traces(
+    marker=dict(color=nasdaq100_holdings['color']), 
+    hovertemplate='%{hovertext}',
+    textposition='top center'
+  )
+  .update_xaxes(visible=False)
+  .update_layout(yaxis_title='YTD Performance (%)')
+)
+```
+
+
+```{python}
+#| label: create nq yearly returns plot
+#| output: false
+
+yearly_performance_plot_df = yearly_performance.assign(
+    color=lambda x: np.where(x['return_percent'] >= 0, green_color, red_color),
+    text=lambda x: x['return_percent'].round(2).astype(str) + "%"
+)
+
+# Create a bar chart
+bar_chart = px.bar(
+    yearly_performance_plot_df,
+    x='session_year',
+    y='return_percent',
+    hover_name='text'
+)
+
+# Customize the text and layout
+bar_chart.update_traces(
+    hovertemplate='%{hovertext}',
+    marker=dict(color=yearly_performance_plot_df['color'])
+)
+
+bar_chart.update_layout(
+    xaxis=dict(
+        tickmode='linear',
+        tick0=yearly_performance_plot_df['session_year'].min(),
+        dtick=1,  # Interval between ticks (1 year)
+        tickfont=dict(size=10),
+        tickangle=-45
+    ),
+    yaxis_title='Return (%)',
+    xaxis_title='Year'
+)
+```
+
+```{python}
+#| label: create-historical-performace
+#| output: false
+
+# monthly_performance['session_date'] = pd.to_datetime(
+#     monthly_performance['session_year'].astype(str) + '-' +
+#     monthly_performance['session_month'].astype(str) + '-01',
+#     format='%Y-%m-%d'
+# )
+
+monthly_performance['session_date'] = monthly_performance.apply(
+   lambda x: pd.Timestamp(x['session_year'], x['session_month'], 1), axis=1
+)
+
+
+monthly_performance = monthly_performance.sort_values('session_date')
+
+historical_nq_performance = (
+  px.line(
+    monthly_performance,
+    x='session_date',
+    y='close'
+  )
+  .update_layout(
+    yaxis_tickformat='$',
+    hovermode=False,
+    yaxis_title='Closing Price',
+    xaxis_title='Year'
+  )
+  .update_traces(line=dict(color='black'))
+  .update_xaxes(
+    tickangle=-45,
+    range=[
+        monthly_performance['session_date'].min().strftime('%Y-%m-%d'),
+        monthly_performance['session_date'].max().strftime('%Y-%m-%d')
+    ],
+    dtick="M24" 
+  )
+)
+
+```
+
+```{python}
+#| label: create-monthly-sentiment
+#| output: false
+
+months = monthly_bullish_stats['session_month_name'].unique()
+bulls = monthly_bullish_stats.bullish_percentage
+combined_values = np.array(list(zip(bulls, 100 - bulls)))
+```
+
+# YTD Performance
+
+## Row {height=47%}
+```{python}
+#| title: __Nasdaq-100 YTD Performance__
+
+ytd_nq_performance.show(config=plot_config)
+```
+
+```{python}
+#| title: __Nasdaq-100 Holdings__
+#| echo: false
+#| warning: false
+
+show(nasdaq100_holdings_table, pageSize=15, search=True, escape=False)
+```
+
+## Row {height=50%}
+```{python}
+#| title: __Nasdaq-100 Holdings YTD Performance__
+#| fig-cap: _YTD capital distribution across all stocks in the Nasdaq-100. Circle size indicates market capitalization and vertical position reflects performance._
+
+# Show the figure without the display mode bar
+nasdaq_100_holdings_performance_plot.show(config=plot_config)
+
+```
+
+# Historical Performance 
+
+## Row {height=50%}
+```{python}
+#| title: __Yearly Returns (2001-Present)__
+
+bar_chart.show(config=plot_config)
+```
+
+## Row {height=50%}
+```{python}
+#| title: __Nasdaq-100 Historical Performance__
+
+historical_nq_performance.show(config=plot_config)
+```
+
+```{python}
+#| title: __Monthly Sentiment__
+#| fig-cap: _The percentage of times each month has been bullish since 2001_
+
+# Create a grid of subplots
+fig, axs = plt.subplots(3, 4, figsize=(7, 5))
+
+# Iterate over the grid
+for i, ax in enumerate(axs.flatten()):
+    values = combined_values[i % len(combined_values)]
+    wedges, texts = ax.pie(values, wedgeprops=dict(width=0.3), startangle=90, colors=[green_color,red_color])
+
+    # Add text in the center
+    sum_values = sum(values)
+    percentage = f"{values[0]/sum_values*100:.0f}%"
+    ax.text(0, 0, percentage, ha='center', va='center', fontsize=12)
+
+    # Set the title for each subplot to the month
+    ax.set_title(months[i])
+
+    # Additional settings
+    ax.set_aspect('equal')  # Ensure pie is drawn as a circle.
+
+# Display the plot
+plt.tight_layout()
+
+plt.show();
+```
