@@ -3,6 +3,9 @@ title: "Nasdaq-100"
 format: 
   dashboard: 
     embed-resources: true
+    nav-buttons:
+      - icon: github
+        href: https://github.com/ljwoodley/nasdaq100_elt
 --- 
 
 ```{python}
@@ -254,7 +257,7 @@ historical_nq_performance.show(config=plot_config)
 
 ```{python}
 #| title: __Monthly Sentiment__
-#| fig-cap: _The percentage of times each month has been bullish since 2001_
+#| fig-cap: _The percentage of times each month has been bullish since 2001._
 
 # Create a grid of subplots
 fig, axs = plt.subplots(3, 4, figsize=(7, 5))
