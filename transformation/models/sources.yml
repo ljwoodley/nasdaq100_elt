@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  - name: yfinance
+    schema: main
+    description: "One record per trading day"
+    tables:
+      - name: nasdaq100_daily_ohlc
+        description: "The daily open, high, low, close (ohlc) for NQ"
+        columns:
+          - name: Date
+            description: "The session date"
+          - name: open
+            description: "The session opening price"
+          - name: high
+            description: "The session high"
+          - name: low
+            description: "The session low"
+          - name: close
+            description: "The session closing price"
+          
