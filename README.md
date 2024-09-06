@@ -8,7 +8,7 @@ The project does the following things:
 1. __Data Scraping__: Scrapes [wikipedia](https://en.wikipedia.org/wiki/Nasdaq-100) for a list of comapnies in the Nasdaq100.
 2. __Data Extraction__: Uses `yfinace` python package to get information on companies in the Nasdaq-100 along with the daily open, high, low and close prices (OHLC) for the Nasdaq-100 E-mini futures (NQ). This data is then loaded to a DuckDB database for further processing.
 4. __Data Transformation__: Uses dbt to to transform the daily OHLC data, calculating weekly, monthly, and yearly returns.
-5. __Data Visualization__: Uses Quarto to create this [dashboard](link-to-dashboard)
+5. __Data Visualization__: Uses Quarto to create this [dashboard.](https://ljwoodley.github.io/posts/2024-09-06/post.html)
 
 
 ## Architecture
