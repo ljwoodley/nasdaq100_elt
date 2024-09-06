@@ -134,7 +134,6 @@ yearly_performance_plot_df = yearly_performance.assign(
     text=lambda x: x['return_percent'].round(2).astype(str) + "%"
 )
 
-# Create a bar chart
 bar_chart = px.bar(
     yearly_performance_plot_df,
     x='session_year',
@@ -142,7 +141,6 @@ bar_chart = px.bar(
     hover_name='text'
 )
 
-# Customize the text and layout
 bar_chart.update_traces(
     hovertemplate='%{hovertext}',
     marker=dict(color=yearly_performance_plot_df['color'])
@@ -152,7 +150,7 @@ bar_chart.update_layout(
     xaxis=dict(
         tickmode='linear',
         tick0=yearly_performance_plot_df['session_year'].min(),
-        dtick=1,  # Interval between ticks (1 year)
+        dtick=1, 
         tickfont=dict(size=10),
         tickangle=-45
     ),
@@ -165,16 +163,9 @@ bar_chart.update_layout(
 #| label: create-historical-performace
 #| output: false
 
-# monthly_performance['session_date'] = pd.to_datetime(
-#     monthly_performance['session_year'].astype(str) + '-' +
-#     monthly_performance['session_month'].astype(str) + '-01',
-#     format='%Y-%m-%d'
-# )
-
 monthly_performance['session_date'] = monthly_performance.apply(
    lambda x: pd.Timestamp(x['session_year'], x['session_month'], 1), axis=1
 )
-
 
 monthly_performance = monthly_performance.sort_values('session_date')
 
@@ -234,7 +225,6 @@ show(nasdaq100_holdings_table, pageSize=15, search=True, escape=False)
 #| title: __Nasdaq-100 Holdings YTD Performance__
 #| fig-cap: _YTD capital distribution across all stocks in the Nasdaq-100. Circle size indicates market capitalization and vertical position reflects performance._
 
-# Show the figure without the display mode bar
 nasdaq_100_holdings_performance_plot.show(config=plot_config)
 
 ```
@@ -262,7 +252,6 @@ historical_nq_performance.show(config=plot_config)
 # Create a grid of subplots
 fig, axs = plt.subplots(3, 4, figsize=(7, 5))
 
-# Iterate over the grid
 for i, ax in enumerate(axs.flatten()):
     values = combined_values[i % len(combined_values)]
     wedges, texts = ax.pie(values, wedgeprops=dict(width=0.3), startangle=90, colors=[green_color,red_color])
@@ -275,10 +264,8 @@ for i, ax in enumerate(axs.flatten()):
     # Set the title for each subplot to the month
     ax.set_title(months[i])
 
-    # Additional settings
-    ax.set_aspect('equal')  # Ensure pie is drawn as a circle.
+    ax.set_aspect('equal') 
 
-# Display the plot
 plt.tight_layout()
 
 plt.show();
