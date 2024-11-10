@@ -24,32 +24,16 @@ The project does the following things:
 </p>
 
 ## Prerequisites
-Berfore starting ensure that Python is installed on your system. All development for this project was performed in Visual Studio Code (VSCode).
+This project utlizes `uv` as the Python package and dependency manager. Before starting, ensure that `uv`is installed on your system. Installation instructions can be found [here.](https://github.com/astral-sh/uv)
 
 ## Setup
 
-To get started with this project:
+__Install Dependencies__
 
-1. __Create a virtual environment__
+Run `uv sync` to install the necessary dependencies into the project's virtual environment.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-2. __Install Dependencies__
-
-For pipeline only setup:
-```bash
-pip install -e ".[dev]"
-```
-
-For both pipeline and dashboard setup:
-```bash
-pip install -e ".[dev,dashboard]"
-```
 Note: VS code users should also install the [VS Code extension for Quarto](https://marketplace.visualstudio.com/items?itemName=quarto.quarto) to render and preview the Quarto dashboard. 
 
 ## Using Dagster
-To launch the Dagster UI web server, run `dagster dev` from the root directory and then navigate to the port shown in your console to view and interact with the pipeline.
+To launch the Dagster UI web server, run `uv run dagster dev` from the root directory and then navigate to the port shown in your console to view and interact with the pipeline.
 

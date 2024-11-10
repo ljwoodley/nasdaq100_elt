@@ -17,24 +17,32 @@ def nasdaq100_tickers() -> list:
     table_class = "wikitable sortable"
     table_id = "constituents"
 
-    response = requests.get(url)
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        print(f"Request failed: {e}")
+        return None
 
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(response.text, 'html.parser')
+    html_table = soup.find('table', {'class': table_class, 'id': table_id})
 
-        html_table = soup.find('table', {'class': table_class, 'id': table_id})
+    if html_table:
+        table_io = StringIO(html_table.prettify())
+        nasdaq_holdings = pd.read_html(table_io)[0]
 
-        if html_table:
-            table_io = StringIO(html_table.prettify())
-            nasdaq_holdings = pd.read_html(table_io)[0]
-            nasdaq_holdings = nasdaq_holdings[nasdaq_holdings['Ticker'] != 'GOOG']
-            nasdaq100_tickers = nasdaq_holdings['Ticker'].tolist()
-            return nasdaq100_tickers
-        else:
-            print("Table not found.")
+        # Check that correct columns are returned from wikipedia
+        expected_columns = {'Company', 'Symbol',
+                            'GICS  Sector', 'GICS  Sub-Industry'}
+        if not expected_columns.issubset(nasdaq_holdings.columns):
+            print("Error: Wikipedia table does not contain the expected columns.")
             return None
+
+        nasdaq_holdings = nasdaq_holdings[nasdaq_holdings['Symbol'] != 'GOOG']
+        nasdaq100_tickers = nasdaq_holdings['Symbol'].tolist()
+        return nasdaq100_tickers
     else:
-        print("Failed to retrieve webpage.")
+        print("Table not found.")
         return None
 
 
@@ -111,15 +119,16 @@ def nasdaq100_daily_ohlc(database: DuckDBResource) -> None:
     Daily open, high, low, close (ohlc) prices for NASDAQ-100 futures, loaded to the database.
     """
 
-    raw_data = yf.download("NQ=F", period='max')
+    raw_data = yf.download("NQ=F", start='2001-01-01')
 
     table_to_load = (
         raw_data
         .drop(columns=['Adj Close', 'Volume'])
         .reset_index()
         .rename(columns=str.lower)
-        .query("date >= '2001-01-01'")
     )
+
+    table_to_load.columns = [col[0] for col in table_to_load.columns]
 
     create_table_query = """
         create table if not exists nasdaq100_daily_ohlc(
@@ -132,7 +141,7 @@ def nasdaq100_daily_ohlc(database: DuckDBResource) -> None:
         """
 
     insert_query = """
-        insert into nasdaq100_daily_ohlc 
+        insert into nasdaq100_daily_ohlc
         select * from table_to_load
         where cast(date as date) not in (select date from nasdaq100_daily_ohlc);
     """
