@@ -1414,6 +1414,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dashboard = [
+    { name = "ipykernel" },
     { name = "itables" },
     { name = "matplotlib" },
     { name = "nbclient" },
@@ -1422,7 +1423,6 @@ dashboard = [
 ]
 dev = [
     { name = "dagster-webserver" },
-    { name = "ipykernel" },
 ]
 
 [package.metadata]
@@ -1438,16 +1438,14 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dashboard = [
+    { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "itables", specifier = ">=2.2.3" },
     { name = "matplotlib", specifier = ">=3.9.2" },
     { name = "nbclient", specifier = ">=0.10.0" },
     { name = "nbformat", specifier = ">=5.10.4" },
     { name = "plotly", specifier = ">=5.24.1" },
 ]
-dev = [
-    { name = "dagster-webserver", specifier = ">=1.9.1" },
-    { name = "ipykernel", specifier = ">=6.29.5" },
-]
+dev = [{ name = "dagster-webserver", specifier = ">=1.9.1" }]
 
 [[package]]
 name = "nbclient"
