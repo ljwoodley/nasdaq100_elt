@@ -6,7 +6,7 @@ import subprocess
 @op
 def render_dashboard():
     file_path = os.path.join("dashboard", "dashboard.qmd")
-    subprocess.run(["quarto", "render", file_path])
+    subprocess.run(["uv", "run", "quarto", "render", file_path])
 
 
 @job
