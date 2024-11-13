@@ -1,0 +1,27 @@
+**/__pycache__/
+
+# Exclude the project virtual environment from image builds
+.venv
+
+# Package files
+*.egg-info/
+
+# Images directory
+images/
+
+# DBT specific
+transformation/target/
+transformation/logs/
+transformation/.user.yml
+transformation/.sqlfluff
+
+# Other files not needed in container
+**/*.duckdb
+**/*.html
+**/*.md
+
+# ignore .git and .cache folders
+.git
+.cache
+.gitignore
+.DS_Store

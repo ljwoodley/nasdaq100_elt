@@ -37,3 +37,13 @@ Note: VS code users should also install the [VS Code extension for Quarto](https
 ## Using Dagster
 To launch the Dagster UI web server, run `uv run dagster dev` from the root directory and then navigate to the port shown in your console to view and interact with the pipeline.
 
+## Running in Docker
+Ensure that Docker is installed on your system. To run the entire pipeline and create the dashboard with Docker run these command from the root directory:
+
+```bash
+docker build -t nasdaq100_elt .
+
+docker run -it -p 8080:8080 -v nasdaq100_elt_vol:/app/dashboard nasdaq100_elt
+```
+
+The Dagster interface will then be available at `http://localhost:8080`. Trigger the `ingest_and_transform_job` from the Dagster jobs pane. Once the job completes `dashboard.html` will be available in the `nasdaq100_elt_vol` volume, accessible via Docker Desktop.
